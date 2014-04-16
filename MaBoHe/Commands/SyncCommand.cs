@@ -32,9 +32,9 @@ namespace MaBoHe.Commands
             _sc = sc;
             _vm = vm;
 
-            _sc.PropertyChanged += (Object sender, PropertyChangedEventArgs e) =>
+            _sc.ConnectionStateChanged += (Object sender, EventArgs e) =>
                 {
-                    if (e.PropertyName == "connectionState" && CanExecuteChanged != null)
+                    if (CanExecuteChanged != null)
                     {
                         CanExecuteChanged(this, null);
                     }

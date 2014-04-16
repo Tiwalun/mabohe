@@ -14,20 +14,19 @@ namespace MaBoHe
         public Mabohe(SerialConn sc)
         {
             _sc = sc;
-            _sc.PropertyChanged += handleConnectionChange;
+            _sc.ConnectionStateChanged += handleConnectionChange;
         }
 
-        private void handleConnectionChange(Object sender, PropertyChangedEventArgs e)
+        private void handleConnectionChange(Object sender, EventArgs e)
         {
-            if (e.PropertyName == "connectionState")
-            {
+
                 PropertyChanged(this, new PropertyChangedEventArgs("isConnected"));
 
                 if (_sc.connectionState == SerialConn.ConnectionState.Connected)
                 {
                     updateState();
                 }
-            }
+
         }
 
         private MbState _state;

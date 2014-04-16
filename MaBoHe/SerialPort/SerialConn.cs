@@ -11,7 +11,7 @@ using System.Windows.Input;
 
 namespace MaBoHe
 {
-    class SerialConn : INotifyPropertyChanged
+    class SerialConn
     {
         public enum ConnectionState
         {
@@ -21,19 +21,14 @@ namespace MaBoHe
             ConnectionLost
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event EventHandler ConnectionStateChanged;
+
+        public SerialSearcher searcher = new SerialSearcher();
 
         private int _timeoutCount = 0;
         private int _timeoutThreshold = 10;
-        private void NotifyPropertChanged([CallerMemberName] String propertyName = "")
-        {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-            }
-        }
 
-        private SerialPort _sp;
+        private ISerialPort _sp;
         private Object _spAccess = new System.Object();
 
         private ConnectionState _connectionState = ConnectionState.NotConnected;
@@ -48,7 +43,7 @@ namespace MaBoHe
                 if (value != _connectionState)
                 {
                     _connectionState = value;
-                    NotifyPropertChanged();
+                    ConnectionStateChanged(this, null);
                 }
             }
         }
@@ -68,8 +63,13 @@ namespace MaBoHe
             }
         }
 
-        public void connect(SerialPort sp)
+        public void connect(ISerialPort sp)
         {
+            if (connectionState == ConnectionState.Connected)
+            {
+                throw new InvalidOperationException();
+            }
+
             if (sp == null)
             {
                 throw new ArgumentNullException("sp");
@@ -85,6 +85,12 @@ namespace MaBoHe
             connectionState = ConnectionState.Connected;
         }
 
+        public void disconnect()
+        {
+            connectionState = ConnectionState.NotConnected;
+            _sp = null;
+        }
+
         private void logErrors(SerialError e)
         {
             System.Diagnostics.Debug.WriteLine(String.Format("SerialPort Error: {0}", e));
@@ -98,20 +104,10 @@ namespace MaBoHe
             {
                 lock (_spAccess)
                 {
-                    System.Diagnostics.Debug.WriteLine(String.Format("Bytes in in buffer before write: {0}", _sp.BytesToRead));
 
-                    _sp.Write(cmd.toByte(), cmd.offset, cmd.length);
+                    _sp.Write(cmd.toByte());
+                    result =_sp.ReadBytes(cmd.responseLength);
 
-                    result = new byte[cmd.responseLength];
-
-                    System.Diagnostics.Debug.WriteLine(String.Format("Bytes in in buffer after before read: {0}", _sp.BytesToRead));
-                    
-                    for (int i = 0; i < cmd.responseLength; i++)
-                    {
-                        result[i] = (byte)_sp.ReadByte();
-                    }
-
-                    System.Diagnostics.Debug.WriteLine(String.Format("Bytes in in buffer after read: {0}", _sp.BytesToRead));
                 }
             } 
             catch (TimeoutException)
@@ -137,9 +133,14 @@ namespace MaBoHe
 
         public async Task<bool> connectHeaterAsync()
         {
+            if (connectionState == ConnectionState.Connected)
+            {
+                throw new InvalidOperationException("Already connected!");
+            }
+
             connectionState = ConnectionState.Connecting;
 
-            SerialPort sp = await SerialSearcher.searchHeaterAsync();
+            ISerialPort sp = await searcher.searchHeaterAsync();
 
             if (sp != null)
             {
@@ -153,9 +154,9 @@ namespace MaBoHe
             }
         }
 
-        public ICommand connectCommand
+        public ICommand SearchAndConnectCommand
         {
-            get { return new Commands.ConnectCommand(this);  }
+            get { return new Commands.SearchHeaterAndConnectCommand(this);  }
         }
     }
 }

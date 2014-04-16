@@ -8,7 +8,7 @@ using System.Windows.Input;
 
 namespace MaBoHe.Commands
 {
-    class ConnectCommand : ICommand
+    class SearchHeaterAndConnectCommand : ICommand
     {
         private SerialConn _conn;
 
@@ -24,7 +24,7 @@ namespace MaBoHe.Commands
 
         public event EventHandler CanExecuteChanged;
 
-        public ConnectCommand(SerialConn conn)
+        public SearchHeaterAndConnectCommand(SerialConn conn)
         {
             if (conn == null)
             {
@@ -33,9 +33,9 @@ namespace MaBoHe.Commands
 
             _conn = conn;
 
-            _conn.PropertyChanged += (Object sender, PropertyChangedEventArgs e) =>
+            _conn.ConnectionStateChanged += (Object sender, EventArgs e) =>
             {
-                if (e.PropertyName == "connectionState" && CanExecuteChanged != null)
+                if (CanExecuteChanged != null)
                 {
                     CanExecuteChanged(this, null);
                 }

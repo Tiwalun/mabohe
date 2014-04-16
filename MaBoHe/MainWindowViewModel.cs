@@ -10,6 +10,7 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using OxyPlot;
 using OxyPlot.Series;
+using OxyPlot.Axes;
 
 namespace MaBoHe
 {
@@ -18,6 +19,11 @@ namespace MaBoHe
         private SerialConn sc;
         private Mabohe mbh;
         public static int SYNC_INTERVALL_MS = 1000;
+        public static int SAMPLE_POINTS = 200;
+
+        private static string[] _plotProperties = new string[] { "setTemp" };
+
+        private Dictionary<string, OxyPlot.Series.LineSeries> _plotData = new Dictionary<string, LineSeries>();
 
         private DispatcherTimer _syncTimer = new DispatcherTimer();
 
@@ -103,8 +109,13 @@ namespace MaBoHe
                 if (value != _setTemp)
                 {
                     _setTemp = value;
+                    
                     NotifyPropertyChanged();
-                    mbh.setSetTemp(_setTemp);
+
+                    if (mbh.isConnected)
+                    {
+                        mbh.setSetTemp(_setTemp);
+                    }
                 }
             }
         }
@@ -252,7 +263,7 @@ namespace MaBoHe
         {
             get
             {
-                return sc.connectCommand;
+                return sc.SearchAndConnectCommand;
             }
         }
 
@@ -283,11 +294,52 @@ namespace MaBoHe
 
         private void setupPlot()
         {
-            tempModel = new PlotModel("Temperatures");
-            tempModel.Series.Add(new FunctionSeries(Math.Cos, 0, 10, 0.1, "cos(x)"));
+            tempModel = new PlotModel("Graph Zahl");
+
+            //Axes
+            LinearAxis la = new LinearAxis();
+            la.Position = AxisPosition.Left;
+            la.StringFormat = "#°";
+
+            System.Diagnostics.Debug.WriteLine(la.FormatValue(10));
+
+            tempModel.Axes.Add(la);
+            tempModel.Axes.Add(new DateTimeAxis(AxisPosition.Bottom));
+
+
+            foreach (string prop in _plotProperties)
+            {
+                //Data Series
+                LineSeries ls = new LineSeries(prop);
+                _plotData.Add(prop, ls);
+
+                tempModel.Series.Add(ls);
+            }
+
             tempModel.InvalidatePlot(true);
+
+
+
         }
 
+        private void updateGraph(Object sender, PropertyChangedEventArgs e)
+        {
+
+            if (_plotData.ContainsKey(e.PropertyName))
+            {
+                object propVal = this.GetType().GetProperty(e.PropertyName).GetValue(this);
+
+                double val = Convert.ToDouble(propVal);
+                _plotData[e.PropertyName].Points.Add(DateTimeAxis.CreateDataPoint(DateTime.Now, val));
+
+                if (_plotData[e.PropertyName].Points.Count > SAMPLE_POINTS)
+                {
+                    _plotData[e.PropertyName].Points.RemoveAt(0);
+                }
+                
+
+            }
+        }
         public MainWindowViewModel()
         {
             sc = new SerialConn();
@@ -295,10 +347,8 @@ namespace MaBoHe
 
             setupPlot();
 
-            sc.PropertyChanged += (Object sender, PropertyChangedEventArgs e) =>
+            sc.ConnectionStateChanged += (Object sender, EventArgs e) =>
             {
-                if (e.PropertyName == "connectionState")
-                {
                     NotifyPropertyChanged("connectionState");
 
                     if (sc.connectionState == SerialConn.ConnectionState.Connected)
@@ -309,7 +359,6 @@ namespace MaBoHe
                     {
                         _syncTimer.Stop();
                     }
-                }
             };
 
             mbh.PropertyChanged += (Object sender, PropertyChangedEventArgs e) =>
@@ -318,11 +367,13 @@ namespace MaBoHe
                     {
                         updateState(mbh.State);
                     }
-            };
+                };
 
             //setup sync timer
             _syncTimer.Interval = TimeSpan.FromMilliseconds(SYNC_INTERVALL_MS);
             _syncTimer.Tick += handleSyncTick;
+
+            this.PropertyChanged += updateGraph;
         }
     }
 }

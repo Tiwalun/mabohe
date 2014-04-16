@@ -1,25 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.IO.Ports;
 
 namespace MaBoHe
 {
     class SerialSearcher
     {
-        private const byte magicResponse = 0x23;
+        public const byte magicResponse = 0x23;
 
-        private static SerialPort createPort(string name)
+        public ISerialPortFactory serialPortFactory = new SerialPortFactory();
+
+        private ISerialPort createPort(string name)
         {
-            return new SerialPort(name, 9600, Parity.None, 8, StopBits.One) { ReadTimeout = 4000, WriteTimeout = 500 };
+            return serialPortFactory.Create(name);
         }
 
-        private static SerialPort OpenIfHeater(string port)
+        private ISerialPort OpenIfHeater(string port)
         {
-            using (SerialPort sp = createPort(port))
-            {
+            ISerialPort sp = createPort(port);
+
                 try
                 {
                     sp.Open();
@@ -30,13 +30,13 @@ namespace MaBoHe
                     }
 
                     HeaterCommand cmd = HeaterCommand.build(HeaterCommand.commandType.MagicByte);
-                    byte[] buff = new byte[1];
+                    byte[] buff;
 
                     try
                     {
-                        sp.Write(cmd.toByte(), cmd.offset, cmd.length);
+                        sp.Write(cmd.toByte());
 
-                        sp.Read(buff, 0, 1);
+                        buff = sp.ReadBytes(1);
                     }
                     catch (TimeoutException)
                     {
@@ -58,29 +58,27 @@ namespace MaBoHe
                 {
                     return null;
                 }
-
-            }
         }
 
-        private static async Task<SerialPort> OpenIfHeaterAsync(string port)
+        private async Task<ISerialPort> OpenIfHeaterAsync(string port)
         {
             return await Task.Run(() => OpenIfHeater(port));
         }
 
-        public static SerialPort searchHeater()
+        public ISerialPort searchHeater()
         {
 
-            string[] ports = SerialPort.GetPortNames();
+            ICollection<string> ports = serialPortFactory.GetPortNames();
 
-            if (ports.Length == 0)
+            if (ports.Count == 0)
             {
                 return null;
             }
 
 
-            IList<Task<SerialPort>> openQuery = (from port in ports select OpenIfHeaterAsync(port)).ToList();
+            IList<Task<ISerialPort>> openQuery = (from port in ports select OpenIfHeaterAsync(port)).ToList();
 
-            Task<SerialPort> foundHeater;
+            Task<ISerialPort> foundHeater;
 
             while (openQuery.Count > 0)
             {
@@ -100,7 +98,7 @@ namespace MaBoHe
             return null;
         }
 
-        public static async Task<SerialPort> searchHeaterAsync()
+        public async Task<ISerialPort> searchHeaterAsync()
         {
             return await Task.Run(() => searchHeater());
         }

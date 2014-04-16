@@ -51,14 +51,38 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="OxyPlot">
-      <HintPath>..\packages\OxyPlot.Core.2014.1.260.1\lib\portable-net4+sl4+wp71+win8\OxyPlot.dll</HintPath>
+    <Reference Include="DocumentFormat.OpenXml">
+      <HintPath>..\packages\OxyPlot.Wpf_NoPCL.2013.1.52.1\lib\NET40\DocumentFormat.OpenXml.dll</HintPath>
     </Reference>
-    <Reference Include="OxyPlot.Wpf">
-      <HintPath>..\packages\OxyPlot.Wpf.2014.1.260.1\lib\NET45\OxyPlot.Wpf.dll</HintPath>
+    <Reference Include="MigraDoc.DocumentObjectModel">
+      <HintPath>..\packages\OxyPlot.Wpf_NoPCL.2013.1.52.1\lib\NET40\MigraDoc.DocumentObjectModel.dll</HintPath>
     </Reference>
-    <Reference Include="OxyPlot.Xps">
-      <HintPath>..\packages\OxyPlot.Wpf.2014.1.260.1\lib\NET45\OxyPlot.Xps.dll</HintPath>
+    <Reference Include="MigraDoc.Rendering">
+      <HintPath>..\packages\OxyPlot.Wpf_NoPCL.2013.1.52.1\lib\NET40\MigraDoc.Rendering.dll</HintPath>
+    </Reference>
+    <Reference Include="MigraDoc.RtfRendering">
+      <HintPath>..\packages\OxyPlot.Wpf_NoPCL.2013.1.52.1\lib\NET40\MigraDoc.RtfRendering.dll</HintPath>
+    </Reference>
+    <Reference Include="OxyPlot, Version=2013.1.52.1, Culture=neutral, PublicKeyToken=638079a8f0bd61e9, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\OxyPlot.Wpf_NoPCL.2013.1.52.1\lib\NET40\OxyPlot.dll</HintPath>
+    </Reference>
+    <Reference Include="OxyPlot.OpenXml">
+      <HintPath>..\packages\OxyPlot.Wpf_NoPCL.2013.1.52.1\lib\NET40\OxyPlot.OpenXml.dll</HintPath>
+    </Reference>
+    <Reference Include="OxyPlot.Pdf">
+      <HintPath>..\packages\OxyPlot.Wpf_NoPCL.2013.1.52.1\lib\NET40\OxyPlot.Pdf.dll</HintPath>
+    </Reference>
+    <Reference Include="OxyPlot.Wpf, Version=2013.1.52.1, Culture=neutral, PublicKeyToken=75e952ba404cdbb0, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\OxyPlot.Wpf_NoPCL.2013.1.52.1\lib\NET40\OxyPlot.Wpf.dll</HintPath>
+    </Reference>
+    <Reference Include="OxyPlot.Xps, Version=2013.1.52.1, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\OxyPlot.Wpf_NoPCL.2013.1.52.1\lib\NET40\OxyPlot.Xps.dll</HintPath>
+    </Reference>
+    <Reference Include="PdfSharp">
+      <HintPath>..\packages\OxyPlot.Wpf_NoPCL.2013.1.52.1\lib\NET40\PdfSharp.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
@@ -86,11 +110,15 @@
     <Compile Include="Commands\ConnectCommand.cs" />
     <Compile Include="Commands\SyncCommand.cs" />
     <Compile Include="Commands\TogglePowerCommand.cs" />
+    <Compile Include="SerialPort\ISerialPort.cs" />
     <Compile Include="Mabohe.cs" />
     <Compile Include="MainWindowViewModel.cs" />
     <Compile Include="MbState.cs" />
-    <Compile Include="SerialConn.cs" />
-    <Compile Include="SerialSearcher.cs" />
+    <Compile Include="SerialPort\ISerialPortFactory.cs" />
+    <Compile Include="SerialPort\SerialConn.cs" />
+    <Compile Include="SerialPort\SerialPortFactory.cs" />
+    <Compile Include="SerialPort\SerialPortWrapper.cs" />
+    <Compile Include="SerialPort\SerialSearcher.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
