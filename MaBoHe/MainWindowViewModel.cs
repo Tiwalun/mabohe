@@ -18,14 +18,17 @@ namespace MaBoHe
     {
         private SerialConn sc;
         private Mabohe mbh;
+        private readonly MainWindow window;
+
         public static int SYNC_INTERVALL_MS = 1000;
         public static int SAMPLE_POINTS = 200;
 
-        private static string[] _plotProperties = new string[] { "setTemp" };
+        private static string[] _plotProperties = new string[] { "setTemp", "tempSensor1", "tempSensor2", "tempHeatsink" };
 
         private Dictionary<string, OxyPlot.Series.LineSeries> _plotData = new Dictionary<string, LineSeries>();
 
         private DispatcherTimer _syncTimer = new DispatcherTimer();
+        private DispatcherTimer _graphTimer = new DispatcherTimer();
 
         public String connectionState
         {
@@ -109,7 +112,7 @@ namespace MaBoHe
                 if (value != _setTemp)
                 {
                     _setTemp = value;
-                    
+
                     NotifyPropertyChanged();
 
                     if (mbh.isConnected)
@@ -200,22 +203,26 @@ namespace MaBoHe
             }
         }
 
-        private string _powerState = "?";
         public string powerState
         {
             get
             {
-                return _powerState;
-            }
-            set
-            {
-                if (_powerState != value)
+                if (mbh == null) { return "?"; }
+
+                switch (mbh.PowerState)
                 {
-                    _powerState = value;
-                    NotifyPropertyChanged();
+                    case PowerState.PowerOff:
+                        return "Power aus";
+                    case PowerState.PowerOn:
+                        return "Power an";
+                    case PowerState.PowerChangin:
+                        return "Power wird an/abgestellt";
+                    case PowerState.PowerFailure:
+                        return "Power Failure!";
+                    default:
+                        return "?";
                 }
             }
-
         }
 
         public int current { get; set; }
@@ -280,18 +287,6 @@ namespace MaBoHe
             get { return new Commands.TogglePowerCommand(mbh); }
         }
 
-        private void updateState(MbState state)
-        {
-            if (state.powerOn)
-            {
-                powerState = "On";
-            }
-            else
-            {
-                powerState = "Off";
-            }
-        }
-
         private void setupPlot()
         {
             tempModel = new PlotModel("Graph Zahl");
@@ -300,8 +295,6 @@ namespace MaBoHe
             LinearAxis la = new LinearAxis();
             la.Position = AxisPosition.Left;
             la.StringFormat = "#°";
-
-            System.Diagnostics.Debug.WriteLine(la.FormatValue(10));
 
             tempModel.Axes.Add(la);
             tempModel.Axes.Add(new DateTimeAxis(AxisPosition.Bottom));
@@ -322,56 +315,80 @@ namespace MaBoHe
 
         }
 
+        private void SavePropertyToGraph(string propertyName)
+        {
+            if (_plotData.ContainsKey(propertyName))
+            {
+                object propVal = this.GetType().GetProperty(propertyName).GetValue(this);
+
+                double val = Convert.ToDouble(propVal);
+                _plotData[propertyName].Points.Add(DateTimeAxis.CreateDataPoint(DateTime.Now, val));
+
+                if (_plotData[propertyName].Points.Count > SAMPLE_POINTS)
+                {
+                    _plotData[propertyName].Points.RemoveAt(0);
+                }
+            }
+            else
+            {
+                throw new ArgumentException("propertyName");
+            }
+        }
+
         private void updateGraph(Object sender, PropertyChangedEventArgs e)
         {
 
             if (_plotData.ContainsKey(e.PropertyName))
             {
-                object propVal = this.GetType().GetProperty(e.PropertyName).GetValue(this);
-
-                double val = Convert.ToDouble(propVal);
-                _plotData[e.PropertyName].Points.Add(DateTimeAxis.CreateDataPoint(DateTime.Now, val));
-
-                if (_plotData[e.PropertyName].Points.Count > SAMPLE_POINTS)
-                {
-                    _plotData[e.PropertyName].Points.RemoveAt(0);
-                }
-                
-
+                SavePropertyToGraph(e.PropertyName);
             }
         }
-        public MainWindowViewModel()
+        public MainWindowViewModel(SerialConn conn, MainWindow window)
         {
-            sc = new SerialConn();
+            this.window = window;
+
+            sc = conn;
             mbh = new Mabohe(sc);
 
             setupPlot();
 
             sc.ConnectionStateChanged += (Object sender, EventArgs e) =>
             {
-                    NotifyPropertyChanged("connectionState");
+                NotifyPropertyChanged("connectionState");
 
-                    if (sc.connectionState == SerialConn.ConnectionState.Connected)
-                    {
-                        _syncTimer.Start();
-                    }
-                    else
-                    {
-                        _syncTimer.Stop();
-                    }
+                if (sc.connectionState == SerialConn.ConnectionState.Connected)
+                {
+                    _syncTimer.Start();
+                }
+                else
+                {
+                    _syncTimer.Stop();
+                }
             };
 
             mbh.PropertyChanged += (Object sender, PropertyChangedEventArgs e) =>
                 {
-                    if (e.PropertyName == "State")
+                    if (e.PropertyName == "PowerState")
                     {
-                        updateState(mbh.State);
+                        NotifyPropertyChanged("powerState");
                     }
                 };
 
             //setup sync timer
             _syncTimer.Interval = TimeSpan.FromMilliseconds(SYNC_INTERVALL_MS);
             _syncTimer.Tick += handleSyncTick;
+
+            _graphTimer.Interval = TimeSpan.FromMilliseconds(100);
+            _graphTimer.Tick += (Object sender, EventArgs e) =>
+            {
+                foreach (string property in _plotProperties)
+                {
+                    SavePropertyToGraph(property);
+                }
+                tempModel.InvalidatePlot(true);
+            };
+
+            _graphTimer.Start();
 
             this.PropertyChanged += updateGraph;
         }

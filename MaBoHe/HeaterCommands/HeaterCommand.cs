@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MaBoHe
+namespace MaBoHe.HeaterCommands
 {
-    class HeaterCommand
+    class HeaterCommand : IHeaterCommand
     {
         public enum commandType {
             GetStatus,
@@ -21,9 +21,11 @@ namespace MaBoHe
             SetPower,
             SetTemp
         }
+
         private const int _length = 4;
         private const int _offset = 0;
         private int _responseLength;
+        private readonly commandType _cmdType;
 
         private byte[] _param = new byte[] { 0x00, 0x00} ;
 
@@ -44,6 +46,11 @@ namespace MaBoHe
             cmd[3] = _param[1];
 
             return cmd;
+        }
+
+        public override string ToString()
+        {
+            return String.Format("HeaterCommand {0} -> {1}", _cmdType.ToString(), System.BitConverter.ToString(this.toByte()));
         }
 
         static byte getCommandByte(commandType cmd)
@@ -113,14 +120,14 @@ namespace MaBoHe
             {
                 throw new InvalidOperationException();
             } else {
-                return new HeaterCommand { cmdByte = getCommandByte(cmd), _responseLength = getResponseLength(cmd)};
+                return new HeaterCommand(cmd) { cmdByte = getCommandByte(cmd), _responseLength = getResponseLength(cmd)};
 	        }
         }
         public static HeaterCommand build(commandType cmd, Int16 param)
         {
             if (cmd == commandType.SetTemp || cmd == commandType.SetPower)
             {
-                return new HeaterCommand { cmdByte = getCommandByte(cmd), _responseLength = getResponseLength(cmd), _param = intToByte(param) };
+                return new HeaterCommand(cmd) { cmdByte = getCommandByte(cmd), _responseLength = getResponseLength(cmd), _param = intToByte(param) };
             }
             else
             {
@@ -132,12 +139,18 @@ namespace MaBoHe
         {
             byte[] resp = BitConverter.GetBytes(i);
 
+            //Make sure we send little endian
             if (!BitConverter.IsLittleEndian)
             {
                 Array.Reverse(resp);
             }
 
             return resp;
+        }
+
+        private HeaterCommand(commandType cmd)
+        {
+            _cmdType = cmd;
         }
     }
 }

@@ -27,7 +27,7 @@ namespace MaBoHe
 
         public ISerialPort Create(string name)
         {
-            SerialPort sp = new SerialPort(name, baudRate, parity, dataBits, stopBits) { ReadTimeout = 4000, WriteTimeout = 500 };
+            SerialPort sp = new SerialPort(name, baudRate, parity, dataBits, stopBits) { ReadTimeout = 5000, WriteTimeout = 1000 };
             return new SerialPortWrapper(sp);
         }
 

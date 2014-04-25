@@ -16,8 +16,15 @@ namespace MaBoHe
     {
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-            MainWindowViewModel vm = new MainWindowViewModel();
+            //FakeSerialPortFactory factory = new FakeSerialPortFactory();
+            //factory.PortNames.Add("COM1");
+            //factory.PortNames.Add("COM2");
+
+            ISerialPortFactory factory = new SerialPortFactory();
             MainWindow mw = new MainWindow();
+
+            MainWindowViewModel vm = new MainWindowViewModel(new SerialConn(new SerialSearcher(factory)), mw);
+            
             mw.DataContext = vm;
 
             mw.Show();

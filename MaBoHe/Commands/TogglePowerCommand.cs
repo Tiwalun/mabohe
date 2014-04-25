@@ -32,6 +32,7 @@ namespace MaBoHe.Commands
             try
             {
                 await Task.Run(() => _mb.togglePower());
+                _mb.updateState();
             }
             finally
             {

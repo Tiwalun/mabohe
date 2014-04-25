@@ -4,12 +4,43 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MaBoHe.HeaterCommands;
 
 namespace MaBoHe
 {
     class Mabohe : INotifyPropertyChanged
     {
-        private SerialConn _sc;
+        private readonly SerialConn _sc;
+        private MbState _state;
+
+        private bool _requestedPowerOn;
+
+        public PowerState PowerState
+        {
+            get
+            {
+                if (_state == null) { return MaBoHe.PowerState.Unknown;}
+
+                if (_state.powerOn && !_state.powerOk)
+                {
+                    return MaBoHe.PowerState.PowerFailure;
+                }
+
+                if (_state.powerOn != _requestedPowerOn)
+                {
+                    return MaBoHe.PowerState.PowerChangin;
+                }
+
+                if (_state.powerOn)
+                {
+                    return MaBoHe.PowerState.PowerOn;
+                }
+                else
+                {
+                    return MaBoHe.PowerState.PowerOff;
+                }
+            }
+        }
 
         public Mabohe(SerialConn sc)
         {
@@ -17,32 +48,56 @@ namespace MaBoHe
             _sc.ConnectionStateChanged += handleConnectionChange;
         }
 
-        private void handleConnectionChange(Object sender, EventArgs e)
+        private MbState getState()
         {
+            HeaterCommand cmd = HeaterCommand.build(HeaterCommand.commandType.GetStatus);
 
-                PropertyChanged(this, new PropertyChangedEventArgs("isConnected"));
+            byte[] response = _sc.sendCommand(cmd);
 
-                if (_sc.connectionState == SerialConn.ConnectionState.Connected)
-                {
-                    updateState();
-                }
+            return MbState.parse(response);
 
         }
 
-        private MbState _state;
+        private void handleConnectionChange(Object sender, EventArgs e)
+        {
+
+            PropertyChanged(this, new PropertyChangedEventArgs("isConnected"));
+
+            if (_sc.connectionState == SerialConn.ConnectionState.Connected)
+            {
+                updateState();
+                _requestedPowerOn = _state.powerOn;
+            }
+
+        }
+
         public MbState State
         {
             get { return _state; }
+            private set
+            {
+                if (State == null || !State.Equals(value))
+                {
+                    _state = value;
+                    PropertyChanged(this, new PropertyChangedEventArgs("State"));
+                    PropertyChanged(this, new PropertyChangedEventArgs("PowerState"));
+                }
+            }
         }
 
         public void togglePower()
         {
             setPower(!State.powerOn);
-            updateState();
         }
 
         public void setPower(bool on)
         {
+            //If the power is already on, don't bother changing it.
+            if (_state.powerOn == on)
+            {
+                return;
+            }
+
             Int16 arg;
 
             if (on)
@@ -55,33 +110,13 @@ namespace MaBoHe
             }
 
             HeaterCommand cmd = HeaterCommand.build(HeaterCommand.commandType.SetPower, arg);
+
             _sc.sendCommand(cmd);
-
-            System.Threading.Thread.Sleep(1000);
-     
-            updateState();
-
-            if (State.powerOn != on)
-            {
-                //setting new power failed
-                throw new Commands.CommandException("Failed to set power");
-            }
-        }
-
-        private MbState getState()
-        {
-            HeaterCommand cmd = HeaterCommand.build(HeaterCommand.commandType.GetStatus);
-
-            byte[] response = _sc.sendCommand(cmd);
-
-            return MbState.parse(response);
-  
         }
 
         public void updateState()
         {
-            _state = getState();
-            PropertyChanged(this, new PropertyChangedEventArgs("State"));
+            State = getState();
         }
 
         public bool isConnected
@@ -148,5 +183,14 @@ namespace MaBoHe
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
+    }
+
+    enum PowerState
+    {
+        PowerOff,
+        PowerOn,
+        PowerChangin,
+        PowerFailure,
+        Unknown
     }
 }

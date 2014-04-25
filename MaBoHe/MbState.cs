@@ -10,7 +10,7 @@ namespace MaBoHe
     class MbState
     {
         public bool powerOn { get; set; }
-        private bool powerOk { get; set; }
+        public bool powerOk { get; set; }
         private bool heatingOn { get; set; }
         private bool fail { get; set; }
         private int errorCode { get; set; }
@@ -26,14 +26,32 @@ namespace MaBoHe
 
             MbState mb = new MbState();
 
-                mb.powerOn = tmpResponse[7];
-                mb.powerOk = tmpResponse[6];
-                mb.heatingOn = tmpResponse[5];
-                mb.fail = tmpResponse[4];
-                mb.errorCode = response[0] & 0x0f;
+            mb.powerOn = tmpResponse[7];
+            mb.powerOk = tmpResponse[6];
+            mb.heatingOn = tmpResponse[5];
+            mb.fail = tmpResponse[4];
+            mb.errorCode = response[0] & 0x0f;
 
-                return mb;
+            return mb;
 
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (this == obj)
+                return true;
+
+            if (obj is MbState)
+            {
+                MbState other = (MbState)obj;
+
+                return this.powerOn == other.powerOn &&
+                    this.powerOk == other.powerOk &&
+                    this.heatingOn == other.heatingOn &&
+                    this.fail == other.fail &&
+                    this.errorCode == other.errorCode;
+            }
+            return base.Equals(obj);
         }
     }
 }

@@ -110,6 +110,9 @@
     <Compile Include="Commands\ConnectCommand.cs" />
     <Compile Include="Commands\SyncCommand.cs" />
     <Compile Include="Commands\TogglePowerCommand.cs" />
+    <Compile Include="HeaterCommands\IHeaterCommand.cs" />
+    <Compile Include="SerialPort\Fake-Serialport\FakeSerialPort.cs" />
+    <Compile Include="SerialPort\Fake-Serialport\FakeSerialPortFactory.cs" />
     <Compile Include="SerialPort\ISerialPort.cs" />
     <Compile Include="Mabohe.cs" />
     <Compile Include="MainWindowViewModel.cs" />
@@ -127,7 +130,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Commands\HeaterCommand.cs" />
+    <Compile Include="HeaterCommands\HeaterCommand.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>

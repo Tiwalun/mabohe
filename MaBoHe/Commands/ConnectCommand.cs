@@ -10,7 +10,7 @@ namespace MaBoHe.Commands
 {
     class SearchHeaterAndConnectCommand : ICommand
     {
-        private SerialConn _conn;
+        private readonly SerialConn _conn;
 
         public bool CanExecute(Object parameter)
         {

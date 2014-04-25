@@ -9,9 +9,13 @@ namespace MaBoHe
 {
     class SerialPortWrapper : ISerialPort
     {
-        SerialPort _sp;
+        private readonly SerialPort _sp;
         public SerialPortWrapper(SerialPort sp)
         {
+            if (sp == null)
+            {
+                throw new ArgumentNullException("sp");
+            }
             _sp = sp;
         }
 

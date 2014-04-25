@@ -23,7 +23,7 @@ namespace MaBoHe
 
         public event EventHandler ConnectionStateChanged;
 
-        public SerialSearcher searcher = new SerialSearcher();
+        public SerialSearcher searcher;
 
         private int _timeoutCount = 0;
         private int _timeoutThreshold = 10;
@@ -96,9 +96,14 @@ namespace MaBoHe
             System.Diagnostics.Debug.WriteLine(String.Format("SerialPort Error: {0}", e));
         }
 
-        public byte[] sendCommand(HeaterCommand cmd)
+        public byte[] sendCommand(HeaterCommands.IHeaterCommand cmd)
         {
             byte[] result;
+
+            System.Diagnostics.Debug.WriteLine("Executing command", "SerialConn");
+            System.Diagnostics.Debug.Indent();
+            System.Diagnostics.Debug.WriteLine("Sending command");
+            System.Diagnostics.Debug.WriteLine(cmd.ToString());
 
             try
             {
@@ -109,12 +114,18 @@ namespace MaBoHe
                     result =_sp.ReadBytes(cmd.responseLength);
 
                 }
+                System.Diagnostics.Debug.WriteLine(System.BitConverter.ToString(result));
             } 
             catch (TimeoutException)
             {
                 registerTimeout();
                 throw;
             }
+            finally
+            {
+                System.Diagnostics.Debug.Unindent();
+            }
+            
 
             _timeoutCount = 0;
             return result;
@@ -157,6 +168,11 @@ namespace MaBoHe
         public ICommand SearchAndConnectCommand
         {
             get { return new Commands.SearchHeaterAndConnectCommand(this);  }
+        }
+
+        public SerialConn(SerialSearcher searcher)
+        {
+            this.searcher = searcher;
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using MaBoHe.HeaterCommands;
 
 namespace MaBoHe
 {
@@ -9,55 +10,70 @@ namespace MaBoHe
     {
         public const byte magicResponse = 0x23;
 
-        public ISerialPortFactory serialPortFactory = new SerialPortFactory();
+        private readonly ISerialPortFactory serialPortFactory;
 
         private ISerialPort createPort(string name)
         {
             return serialPortFactory.Create(name);
         }
 
+        private bool CheckIfHeater(ISerialPort port)
+        {
+            if (!port.IsOpen)
+            {
+                throw new ArgumentException("The serial port has to be open to check if the heater is connected to it.", "port");
+            }
+
+            HeaterCommand cmd = HeaterCommand.build(HeaterCommand.commandType.MagicByte);
+            byte[] buff;
+
+            try
+            {
+                port.Write(cmd.toByte());
+
+                buff = port.ReadBytes(1);
+            }
+            catch (TimeoutException)
+            {
+                return false;
+            }
+
+            return buff[0] == magicResponse;
+        }
+
         private ISerialPort OpenIfHeater(string port)
         {
             ISerialPort sp = createPort(port);
 
-                try
-                {
-                    sp.Open();
+            bool IsHeater = false;
 
-                    if (!sp.IsOpen)
-                    {
-                        return null;
-                    }
+            try
+            {
+                sp.Open();
 
-                    HeaterCommand cmd = HeaterCommand.build(HeaterCommand.commandType.MagicByte);
-                    byte[] buff;
-
-                    try
-                    {
-                        sp.Write(cmd.toByte());
-
-                        buff = sp.ReadBytes(1);
-                    }
-                    catch (TimeoutException)
-                    {
-                        sp.Close();
-                        return null;
-                    }
-
-                    if (buff[0] == magicResponse)
-                    {
-                        return sp;
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                }
-
-                catch (UnauthorizedAccessException)
+                if (!sp.IsOpen)
                 {
                     return null;
                 }
+
+                IsHeater = CheckIfHeater(sp);
+
+            }
+
+            catch (UnauthorizedAccessException)
+            {
+                return null;
+            }
+            finally
+            {
+                if (!IsHeater)
+                {
+                    sp.Close();
+                }
+            }
+
+            if (IsHeater) { return sp; }
+            else { return null; }
         }
 
         private async Task<ISerialPort> OpenIfHeaterAsync(string port)
@@ -101,6 +117,11 @@ namespace MaBoHe
         public async Task<ISerialPort> searchHeaterAsync()
         {
             return await Task.Run(() => searchHeater());
+        }
+
+        public SerialSearcher(ISerialPortFactory factory)
+        {
+            serialPortFactory = factory;
         }
     }
 }

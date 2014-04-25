@@ -37,12 +37,12 @@
             <Button Content="Connect" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="75" Command="{Binding Path=ConnectCommand}" Grid.Row="7" Height="22"/>
             <Button Grid.ColumnSpan="2" Content="Sync" HorizontalAlignment="Left" Margin="90,10,0,0" Grid.Row="7" VerticalAlignment="Top" Width="75" Command="{Binding Path=SyncCommand}" Height="22"/>
 
-            <Label Content="Power" HorizontalAlignment="Left" Margin="10,10,0,0" Grid.Row="5" VerticalAlignment="Top" Width="132" Height="26"/>
-            <Button Content="{Binding Path=powerState, TargetNullValue=Unbekannt}" Grid.Column="1" HorizontalAlignment="Left" Margin="10,10,0,0" Grid.Row="5" 
+            <Label Content="{Binding Path=powerState}" HorizontalAlignment="Left" Margin="10,10,0,0" Grid.Row="5" VerticalAlignment="Top" Width="132" Height="26"/>
+            <Button Content="Switch" Grid.Column="1" HorizontalAlignment="Left" Margin="10,10,0,0" Grid.Row="5" 
                     Command="{Binding Path=togglePowerCommand}" VerticalAlignment="Top" Width="52" Height="26"/>
 
 
-            <oxy:Plot Model="{Binding Path=tempModel}" Grid.Row="1" Grid.Column="2" Grid.RowSpan="6"/>
+            <oxy:Plot x:Name="TempPlot" Model="{Binding Path=tempModel}" Grid.Row="1" Grid.Column="2" Grid.RowSpan="6"/>
         </Grid>
         
         <StatusBar DockPanel.Dock="Bottom">

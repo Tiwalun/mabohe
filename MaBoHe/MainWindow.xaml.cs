@@ -24,5 +24,11 @@ namespace MaBoHe
         {
             InitializeComponent();
         }
+
+
+        public void updateGraph()
+        {
+            TempPlot.RefreshPlot(true);
+        }
     }
 }

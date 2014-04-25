@@ -10,8 +10,6 @@ namespace MaBoHeTest
         [TestMethod]
         public void TestSearchWithNoHeater()
         {
-            SerialSearcher search = new SerialSearcher();
-
             ISerialPort spNoHeater = new MaBoHe.Fakes.StubISerialPort()
             {
                 PortNameGet = () => "Port 1",
@@ -20,11 +18,12 @@ namespace MaBoHeTest
 
             ISerialPortFactory spf = new MaBoHe.Fakes.StubISerialPortFactory()
             {
-                GetPortNames = () => {return new string[] {"Port 1"};},
+                GetPortNames = () => { return new string[] { "Port 1" }; },
                 CreateString = (name) => { if (name == "Port 1") return spNoHeater; else return null; }
             };
 
-            search.serialPortFactory = spf;
+
+            SerialSearcher search = new SerialSearcher(spf);
 
             Assert.IsNull(search.searchHeater());
 
@@ -33,7 +32,7 @@ namespace MaBoHeTest
         [TestMethod]
         public void TestSearchWithHeater()
         {
-            SerialSearcher search = new SerialSearcher();
+            
 
             SerialPortFake spHeater = new SerialPortFake("Port 1");
             spHeater.setupResponse((count) => { return new byte[] { SerialSearcher.magicResponse }; });
@@ -44,7 +43,7 @@ namespace MaBoHeTest
                 CreateString = (name) => { if (name == "Port 1") return spHeater; else return null; }
             };
 
-            search.serialPortFactory = spf;
+            SerialSearcher search = new SerialSearcher(spf);
 
             Assert.AreEqual(spHeater, search.searchHeater());
 

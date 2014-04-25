@@ -13,16 +13,33 @@ namespace MaBoHe.Commands
 
         private SerialConn _sc;
         private MainWindowViewModel _vm;
+
+        private bool _inFlight = false;
+        private Object _sInFlight = new System.Object();
  
 
         public bool CanExecute(Object parameter)
         {
-            return _sc.connectionState == SerialConn.ConnectionState.Connected;
+            lock (_sInFlight)
+            {
+                return _sc.connectionState == SerialConn.ConnectionState.Connected && !_inFlight;
+            }
         }
 
         public async void Execute(Object parameter)
         {
-            await Task.Run(() =>_vm.SyncAll());
+            lock (_sInFlight)
+            {
+                _inFlight = true;
+            }
+            try
+            {
+                await Task.Run(() => _vm.SyncAll());
+            }
+            finally
+            {
+                _inFlight = false;
+            }
         }
 
         public event EventHandler CanExecuteChanged;
